@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>中国語 会話練習アプリ（第2号・分離版）</title>
+  <style>
+    body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; color: #333; }
+    
+    /* ログイン画面のスタイル */
+    #loginScreen { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; margin-top: 50px; }
+    #loginScreen h2 { color: #4a90d9; margin-top: 0; }
+    .key-input { width: 80%; padding: 12px; font-size: 18px; border: 2px solid #ccc; border-radius: 8px; margin: 20px 0; text-align: center; letter-spacing: 2px; }
+    .key-input:focus { border-color: #4a90d9; outline: none; }
+    .login-btn { background-color: #4a90d9; color: white; border: none; padding: 12px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 80%; }
+    .login-btn:hover { background-color: #3570b0; }
+    .stripe-btn { background-color: #6772E5; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 80%; margin-top: 10px; }
+    .stripe-btn:hover { background-color: #5469d4; }
+
+    /* アプリ画面のスタイル */
+    .header-controls { background-color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .control-group { display: flex; align-items: center; gap: 10px; }
+    .control-group label { min-width: 90px; font-weight: bold; }
+    select { padding: 8px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; flex-grow: 1; width: 100%; }
+    
+    #chatBox { background-color: #fff; height: 400px; overflow-y: auto; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; }
+    .message { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 18px; line-height: 1.4; position: relative; word-wrap: break-word; }
+    .msg-ai { background-color: #e4e6eb; color: #050505; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .msg-user { background-color: #0084ff; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .msg-speaker { font-size: 12px; color: #666; margin-bottom: 4px; display: flex; align-items: center; }
+    .msg-ai-wrapper { align-self: flex-start; max-width: 80%; }
+    .msg-user-wrapper { align-self: flex-end; max-width: 80%; text-align: right; }
+    
+    .clickable-bubble { cursor: pointer; transition: opacity 0.2s; }
+    .clickable-bubble:hover { opacity: 0.8; }
+    
+    .translate-btn { background: none; border: 1px solid #ccc; border-radius: 4px; color: #555; font-size: 11px; cursor: pointer; padding: 2px 6px; margin-left: 10px; font-weight: normal; transition: 0.2s; }
+    .translate-btn:hover { background-color: #e4e6eb; }
+    .translation-box { background-color: #f8f9fa; border: 1px solid #e4e6eb; border-radius: 8px; padding: 10px; margin-top: 5px; font-size: 14px; color: #333; text-align: left; animation: fadeIn 0.3s; }
+    .translation-box .pinyin { color: #e67e22; margin-bottom: 4px; font-family: Arial, sans-serif; font-weight: bold; }
+    .translation-box .japanese { color: #555; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .input-area { display: flex; gap: 10px; align-items: flex-end; }
+    textarea { flex-grow: 1; height: 60px; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 20px; resize: none; box-sizing: border-box; }
+    button { background-color: #0084ff; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #0073e6; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    .mic-btn { background-color: #e74c3c; border-radius: 50%; width: 50px; height: 50px; padding: 0; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+    .mic-btn:hover { background-color: #c0392b; }
+    .recording { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { background-color: #e74c3c; } 50% { background-color: #ff7675; } 100% { background-color: #e74c3c; } }
+    
+    #historyArea { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #historyContent { background: #f8f9fa; padding: 15px; border: 1px solid #ccc; border-radius: 5px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; line-height: 1.6; margin-bottom: 15px; }
+    .copy-btn { background-color: #27ae60; width: 100%; margin-bottom: 10px; }
+    .copy-btn:hover { background-color: #219653; }
+    .next-btn { background-color: #f39c12; width: 100%; }
+    .next-btn:hover { background-color: #d68910; }
+    /* ★契約管理リンクのかっこいいスタイル */
+    .billing-link {
+      font-size: 13px;
+      color: #555;
+      text-decoration: none;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f8f9fa;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .billing-link:hover {
+      background-color: #e9ecef;
+      color: #333;
+      border-color: #ccc;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  
+  <!-- ログイン画面 -->
+  <div id="loginScreen">
+    <h2>🔒 アプリのロック解除</h2>
+    <p>ご利用にはライセンスキーが必要です。</p>
+    <input type="text" id="licenseKeyInput" class="key-input" placeholder="例: TEST-1234">
+    <button class="login-btn" id="loginBtn" onclick="login()">利用開始</button>
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+    <p style="color: #666; font-size: 14px;">キーをお持ちでない方はこちら</p>
+    <a href="https://stripe.com/jp" target="_blank">
+      <button class="stripe-btn">💳 利用権を購入する</button>
+    </a>
+  </div>
+
+  <!-- アプリ本体 -->
+  <div id="appContainer" style="display:none;">
+    <h1 style="text-align: center; font-size: 24px;">🗣️ 中国語 会話練習アプリ</h1>
+    
+    <div class="header-controls">
+      <div class="control-group">
+        <label for="sheetSelect">📂 シート:</label>
+        <select id="sheetSelect" onchange="loadSheetData()">
+          <option value="">読み込み中...</option>
+        </select>
+        <button onclick="logout()" style="background-color: #95a5a6; padding: 8px 15px; font-size: 14px; margin: 0; border-radius: 5px;">ログアウト</button>
+        <!-- ★ここに追加：かっこいい契約管理リンク -->
+        <a href="https://billing.stripe.com/p/login/cNi3cnezc5JR7RgddZ1kA00" target="_blank" class="billing-link">
+          ⚙️ 契約管理
+        </a>
+      </div>
+      <div class="control-group">
+        <label for="themeSelect">📝 テーマ:</label>
+        <select id="themeSelect" onchange="startConversation()">
+          <option value="">シートを選択してください</option>
+        </select>
+      </div>
+    </div>
+    
+    <div id="learningArea">
+      <div id="chatBox"></div>
+      <div style="font-size: 12px; color: #666; margin-bottom: 5px; text-align: right;">
+        ※吹き出しをクリックすると音声が流れます<br>
+        ※「结束」と送信すると会話を終了し、評価を表示します
+      </div>
+      <div class="input-area">
+        <button class="mic-btn" id="micBtn" onclick="startSpeechRecognition()" title="音声入力">🎤</button>
+        <textarea id="userAnswer" placeholder="中国語で返答を入力... (Enterで送信)"></textarea>
+        <button id="submitBtn" onclick="sendMessage()">送信</button>
+      </div>
+    </div>
+
+    <div id="historyArea" style="display:none;">
+      <h2 style="margin-top: 0;">📊 会話終了！学習記録</h2>
+      <div id="historyContent"></div>
+      <button class="copy-btn" onclick="copyHistory()">📋 記録をクリップボードにコピー</button>
+      <button class="next-btn" onclick="nextTheme()">🔄 次のテーマで会話を始める</button>
+    </div>
+  </div>
+  
+  <script>
+    // ★★★ ここにそれぞれのGASのデプロイURLを貼り付けてください ★★★
+    const GAS_LICENSE_URL = 'https://script.google.com/macros/s/AKfycby_h5wQX09teIr6CgZ3xnsbSDegoS-BbQPAIPvFwlH61P79hWQ5t8jN_OrxF5aPuZ1k_w/exec'; // 手順1の「ライセンス管理GAS」のURL
+    const GAS_APP_URL = 'https://script.google.com/macros/s/AKfycbw7WkP6dLtEN-RpQS2YrIs9HiNG-8QgdmNgreLsS3WJXbwWaPWsC3kqj7BXy7mfNYTRjA/exec';         // 手順2の「第2号GAS」のURL
+    
+    let currentLicenseKey = localStorage.getItem('chineseAppLicenseKey') || '';
+    let currentSheetData = []; 
+    let currentIndex = 0;      
+    let apiHistory = []; 
+    let displayHistory = []; 
+    let isProcessing = false;
+
+    window.onload = function() {
+      if (currentLicenseKey) {
+        document.getElementById('licenseKeyInput').value = currentLicenseKey;
+      }
+    };
+
+    // ★ライセンス管理GASと通信する関数
+    async function fetchFromLicenseGAS(payload) {
+      payload.licenseKey = currentLicenseKey;
+      try {
+        const response = await fetch(GAS_LICENSE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.error) {
+          alert(data.error);
+          if (data.error.includes("無効") || data.error.includes("見つかりません")) logout();
+          return null;
+        }
+        return data;
+      } catch (error) {
+        alert('ライセンスサーバーとの通信エラー: ' + error.message);
+        return null;
+      }
+    }
+
+    // ★アプリGAS（第2号GAS）と通信する関数
+    async function fetchFromAppGAS(payload) {
+      try {
+        const response = await fetch(GAS_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        return data;
+      } catch (error) {
+        alert('アプリサーバーとの通信エラー: ' + error.message);
+        return null;
+      }
+    }
+    
+    async function login() {
+      const keyInput = document.getElementById('licenseKeyInput').value.trim();
+      if (!keyInput) return alert('ライセンスキーを入力してください。');
+      
+      const btn = document.getElementById('loginBtn');
+      btn.textContent = '認証中...';
+      btn.disabled = true;
+      
+      currentLicenseKey = keyInput;
+      const data = await fetchFromLicenseGAS({ action: 'verifyLicense' });
+      
+      btn.textContent = '利用開始';
+      btn.disabled = false;
+      
+      if (data && data.valid) {
+        localStorage.setItem('chineseAppLicenseKey', keyInput);
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        initializeApp();
+      } else {
+        currentLicenseKey = '';
+      }
+    }
+
+    function logout() {
+      currentLicenseKey = '';
+      localStorage.removeItem('chineseAppLicenseKey');
+      document.getElementById('licenseKeyInput').value = '';
+      document.getElementById('appContainer').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'block';
+    }
+
+    async function initializeApp() {
+      const data = await fetchFromAppGAS({ action: 'getSheets' });
+      if (data && data.sheets) {
+        const select = document.getElementById('sheetSelect');
+        select.innerHTML = '';
+        data.sheets.forEach(sheet => {
+          const option = document.createElement('option');
+          option.value = sheet;
+          option.textContent = sheet;
+          select.appendChild(option);
+        });
+        if(data.sheets.length > 0) await loadSheetData();
+      }
+      
+      document.getElementById('userAnswer').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (!isProcessing) sendMessage();
+        }
+      });
+    }
+    
+    async function loadSheetData() {
+      const sheetName = document.getElementById('sheetSelect').value;
+      if (!sheetName) return;
+      
+      const themeSelect = document.getElementById('themeSelect');
+      themeSelect.innerHTML = '<option value="">データ読み込み中...</option>';
+      
+      const data = await fetchFromAppGAS({ action: 'getSheetData', sheetName: sheetName });
+      if (data && data.data && data.data.length > 0) {
+        currentSheetData = data.data;
+        themeSelect.innerHTML = '';
+        currentSheetData.forEach((item, index) => {
+          const option = document.createElement('option');
+          option.value = index;
+          option.textContent = `Q${index + 1}. ${item.chinese}`;
+          themeSelect.appendChild(option);
+        });
+        startConversation();
+      } else {
+        themeSelect.innerHTML = '<option value="">データがありません</option>';
+        alert('このシートにはデータがありません');
+      }
+    }
+
+    function nextTheme() {
+      const themeSelect = document.getElementById('themeSelect');
+      currentIndex++;
+      if (currentIndex >= currentSheetData.length) {
+        alert('このシートの最後のテーマまで終わりました！最初に戻ります。');
+        currentIndex = 0;
+      }
+      themeSelect.value = currentIndex;
+      startConversation();
+    }
+
+    function startConversation() {
+      const themeSelect = document.getElementById('themeSelect');
+      if (!themeSelect.value) return;
+      currentIndex = parseInt(themeSelect.value, 10);
+      
+      document.getElementById('learningArea').style.display = 'block';
+      document.getElementById('historyArea').style.display = 'none';
+      document.getElementById('userAnswer').value = '';
+      
+      const firstQuestion = currentSheetData[currentIndex].chinese;
+      apiHistory = [{ role: 'assistant', content: firstQuestion }];
+      displayHistory = [{ speaker: 'AI', text: firstQuestion }];
+      
+      renderChat();
+      speakChinese(firstQuestion);
+    }
+
+    function renderChat() {
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML = '';
+      
+      displayHistory.forEach(msg => {
+        const wrapper = document.createElement('div');
+        const speakerLabel = document.createElement('div');
+        const bubble = document.createElement('div');
+        
+        speakerLabel.className = 'msg-speaker';
+        bubble.className = 'message clickable-bubble'; 
+        bubble.title = "クリックして音声を聞く";
+        
+        if (msg.speaker === 'AI') {
+          wrapper.className = 'msg-ai-wrapper';
+          speakerLabel.textContent = '🤖 AI先生';
+          
+          const translateBtn = document.createElement('button');
+          translateBtn.textContent = '❓ 翻訳';
+          translateBtn.className = 'translate-btn';
+          translateBtn.onclick = function(e) {
+            e.stopPropagation();
+            toggleTranslation(msg.text, wrapper, translateBtn);
+          };
+          speakerLabel.appendChild(translateBtn);
+          bubble.className += ' msg-ai';
+        } else {
+          wrapper.className = 'msg-user-wrapper';
+          speakerLabel.textContent = '👤 あなた';
+          bubble.className += ' msg-user';
+        }
+        
+        bubble.textContent = msg.text;
+        bubble.onclick = function() { speakChinese(msg.text); };
+        
+        wrapper.appendChild(speakerLabel);
+        wrapper.appendChild(bubble);
+        chatBox.appendChild(wrapper);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function toggleTranslation(text, wrapper, btn) {
+      let transDiv = wrapper.querySelector('.translation-box');
+      if (transDiv) {
+        transDiv.style.display = transDiv.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+      btn.textContent = '⏳ 翻訳中...';
+      btn.disabled = true;
+
+      // ★ライセンス管理GASに翻訳を依頼
+      const data = await fetchFromLicenseGAS({ action: 'translateText', text: text });
+      
+      btn.textContent = '❓ 翻訳';
+      btn.disabled = false;
+
+      if (data && data.translation) {
+        try {
+          const transData = JSON.parse(data.translation);
+          transDiv = document.createElement('div');
+          transDiv.className = 'translation-box';
+          transDiv.innerHTML = `<div class="pinyin">${transData.pinyin}</div><div class="japanese">${transData.japanese}</div>`;
+          wrapper.appendChild(transDiv);
+          const chatBox = document.getElementById('chatBox');
+          chatBox.scrollTop = chatBox.scrollHeight;
+        } catch (e) {
+          alert('翻訳データの解析に失敗しました。');
+        }
+      }
+    }
+
+    async function sendMessage() {
+      const text = document.getElementById('userAnswer').value.trim();
+      if (!text) return;
+      
+      document.getElementById('userAnswer').value = '';
+      displayHistory.push({ speaker: 'You', text: text });
+      renderChat();
+      speakChinese(text);
+      
+      if (text === '结束') {
+        await finishConversation();
+        return;
+      }
+      
+      apiHistory.push({ role: 'user', content: text });
+      isProcessing = true;
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').textContent = '...';
+      
+      // ★ライセンス管理GASに会話の返答を依頼
+      const data = await fetchFromLicenseGAS({ action: 'chatReply', history: apiHistory });
+      
+      if (data && data.reply) {
+        const reply = data.reply;
+        apiHistory.push({ role: 'assistant', content: reply });
+        displayHistory.push({ speaker: 'AI', text: reply });
+        renderChat();
+        speakChinese(reply);
+      }
+      
+      isProcessing = false;
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').textContent = '送信';
+      document.getElementById('userAnswer').focus();
+    }
+
+    async function finishConversation() {
+      isProcessing = true;
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').textContent = '評価中...';
+      
+      // ★ライセンス管理GASに会話の評価を依頼
+      const data = await fetchFromLicenseGAS({ action: 'evaluateConversation', history: apiHistory });
+      
+      if (data && data.feedback) {
+        showHistoryScreen(data.feedback);
+      }
+      
+      isProcessing = false;
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').textContent = '送信';
+    }
+
+    function showHistoryScreen(feedback) {
+      document.getElementById('learningArea').style.display = 'none';
+      document.getElementById('historyArea').style.display = 'block';
+      const contentDiv = document.getElementById('historyContent');
+      let html = '<strong>【会話履歴】</strong><br><br>';
+      displayHistory.forEach(msg => {
+        const icon = msg.speaker === 'AI' ? '🤖' : '👤';
+        html += `${icon} ${msg.speaker === 'AI' ? 'AI' : 'あなた'}: ${msg.text}<br>`;
+      });
+      html += '<br><hr><br><strong>【AI先生からの評価】</strong><br><br>';
+      html += feedback.replace(/\n/g, '<br>');
+      contentDiv.innerHTML = html;
+    }
+
+    function copyHistory() {
+      const contentDiv = document.getElementById('historyContent');
+      let text = contentDiv.innerText || contentDiv.textContent;
+      navigator.clipboard.writeText(text).then(() => alert('📋 学習記録をクリップボードにコピーしました！')).catch(err => alert('コピーに失敗しました: ' + err));
+    }
+
+    function speakChinese(text) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.8;
+      window.speechSynthesis.speak(utterance);
+    }
+    
+    function startSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window)) return alert('お使いのブラウザは音声入力に対応していません。');
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      const micBtn = document.getElementById('micBtn');
+      micBtn.classList.add('recording');
+      recognition.onresult = function(event) { document.getElementById('userAnswer').value = event.results[0][0].transcript; };
+      recognition.onerror = function(event) { alert('音声認識エラー: ' + event.error); };
+      recognition.onend = function() { micBtn.classList.remove('recording'); };
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
