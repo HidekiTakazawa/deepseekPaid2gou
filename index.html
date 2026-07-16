@@ -58,7 +58,7 @@
     button { background-color: #0084ff; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 20px; cursor: pointer; font-weight: bold; }
     button:hover { background-color: #0073e6; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
-    .mic-btn { background-color: #e74c3c; border-radius: 50%; width: 50px; height: 50px; padding: 0; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+    .mic-btn { background-color: #e74c3c; border-radius: 50%; width: 50px; height: 50px; padding: 0; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: all 0.3s ease; }
     .mic-btn:hover { background-color: #c0392b; }
     .recording { animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { background-color: #e74c3c; } 50% { background-color: #ff7675; } 100% { background-color: #e74c3c; } }
@@ -481,18 +481,75 @@
       utterance.lang = 'zh-CN'; utterance.rate = 0.8;
       window.speechSynthesis.speak(utterance);
     }
-    
+    // ★音声認識用のグローバル変数
+    let speechRecognition = null;
+    let isRecording = false;
+    let originalText = ''; // ★追加：録音開始前のテキストを保持する変数
+
     function startSpeechRecognition() {
       if (!('webkitSpeechRecognition' in window)) return alert('お使いのブラウザは音声入力に対応していません。');
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = 'zh-CN'; recognition.interimResults = false; recognition.maxAlternatives = 1;
+      
       const micBtn = document.getElementById('micBtn');
-      micBtn.classList.add('recording');
-      recognition.onresult = function(event) { document.getElementById('userAnswer').value = event.results[0][0].transcript; };
-      recognition.onerror = function(event) { alert('音声認識エラー: ' + event.error); };
-      recognition.onend = function() { micBtn.classList.remove('recording'); };
-      recognition.start();
+      const answerArea = document.getElementById('userAnswer');
+      
+      if (isRecording) {
+        if (speechRecognition) speechRecognition.stop();
+        return;
+      }
+
+      speechRecognition = new webkitSpeechRecognition();
+      speechRecognition.lang = 'zh-CN'; 
+      speechRecognition.continuous = true;
+      speechRecognition.interimResults = true;
+      
+      speechRecognition.onstart = function() {
+        isRecording = true;
+        micBtn.classList.add('recording');
+        micBtn.innerHTML = '⏹️';
+        micBtn.style.borderRadius = '10px';
+        answerArea.placeholder = '🔴 録音中... 話し終わったら停止ボタン（⏹️）を押してください';
+        
+        // ★修正：マイクを押す前に入力されていた文字を記憶しておく
+        originalText = answerArea.value; 
+      };
+
+      speechRecognition.onresult = function(event) {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        // ★修正：常に 0 からループを回し、確定した言葉が消えないようにする
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        
+        // ★修正：元のテキスト ＋ 確定したテキスト ＋ 認識中のテキスト をすべて結合して表示
+        answerArea.value = originalText + finalTranscript + interimTranscript;
+      };
+
+      speechRecognition.onerror = function(event) { 
+        console.error('音声認識エラー: ' + event.error); 
+        stopRecordingUI();
+      };
+
+      speechRecognition.onend = function() { 
+        stopRecordingUI(); 
+      };
+
+      function stopRecordingUI() {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.innerHTML = '🎤';
+        micBtn.style.borderRadius = '50%';
+        answerArea.placeholder = '中国語で返答を入力... (Enterで送信)';
+      }
+
+      speechRecognition.start();
     }
+    
   </script>
 </body>
 </html>
