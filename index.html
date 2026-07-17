@@ -2,7 +2,6 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>中国語 会話練習アプリ（第2号・分離版）</title>
   <style>
     body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; color: #333; }
@@ -16,10 +15,11 @@
     .stripe-btn { background-color: #6772E5; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 80%; margin-top: 10px; }
     .stripe-btn:hover { background-color: #5469d4; }
 
-    .header-controls { background-color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .control-group { display: flex; align-items: center; gap: 10px; }
-    .control-group label { min-width: 90px; font-weight: bold; }
-    select { padding: 8px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; flex-grow: 1; width: 100%; }
+    /* ★ヘッダーのレイアウト調整（スマホでも崩れないように flex-wrap を追加） */
+    .header-controls { background-color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); align-items: center; }
+    .control-group { display: flex; align-items: center; gap: 5px; flex-grow: 1; min-width: 120px; }
+    .control-group label { font-weight: bold; font-size: 14px; white-space: nowrap; }
+    select { padding: 6px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; width: 100%; }
     
     .billing-link { font-size: 13px; color: #555; text-decoration: none; padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; background-color: #f8f9fa; white-space: nowrap; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; }
     .billing-link:hover { background-color: #e9ecef; color: #333; border-color: #ccc; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -42,7 +42,6 @@
     .translation-box .pinyin { color: #e67e22; margin-bottom: 4px; font-family: Arial, sans-serif; font-weight: bold; }
     .translation-box .japanese { color: #555; }
     
-    /* ★返答案ボックスのスタイル */
     .suggestion-box { background-color: #f0f7ff; border: 1px solid #4a90d9; border-radius: 8px; padding: 10px; margin-top: 5px; font-size: 14px; text-align: left; animation: fadeIn 0.3s; }
     .sugg-item { border-bottom: 1px dashed #ccc; padding: 8px 0; cursor: pointer; transition: background 0.2s; }
     .sugg-item:last-child { border-bottom: none; }
@@ -73,7 +72,6 @@
     .next-btn { background-color: #f39c12; width: 100%; }
     .next-btn:hover { background-color: #d68910; }
     
-    /* ★質問モーダルのスタイル */
     #questionModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
     .modal-content { background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
   </style>
@@ -87,7 +85,7 @@
     <button class="login-btn" id="loginBtn" onclick="login()">利用開始</button>
     <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
     <p style="color: #666; font-size: 14px;">キーをお持ちでない方はこちら</p>
-    <a href="https://buy.stripe.com/bJeaEP0Im7RZdbAb5R1kA01" target="_blank">
+    <a href="https://stripe.com/jp" target="_blank">
       <button class="stripe-btn">💳 利用権を購入する</button>
     </a>
   </div>
@@ -99,17 +97,25 @@
       <div class="control-group">
         <label for="sheetSelect">📂 シート:</label>
         <select id="sheetSelect" onchange="loadSheetData()">
-          <option value="">読み込み中...</option>
+          <option value="">読込中...</option>
         </select>
       </div>
       <div class="control-group">
         <label for="themeSelect">📝 テーマ:</label>
         <select id="themeSelect" onchange="startConversation()">
-          <option value="">シートを選択してください</option>
+          <option value="">選択してください</option>
         </select>
       </div>
-      <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
-        <a href="https://billing.stripe.com/p/login/cNi3cnezc5JR7RgddZ1kA00" target="_blank" class="billing-link">⚙️ 契約管理</a>
+      <!-- ★文字種切り替えスイッチを追加 -->
+      <div class="control-group">
+        <label for="charTypeSelect">🔤 文字:</label>
+        <select id="charTypeSelect" onchange="changeCharType()">
+          <option value="simp">🇨🇳 簡体字</option>
+          <option value="trad">🇹🇼 繁体字</option>
+        </select>
+      </div>
+      <div style="margin-left: auto; display: flex; gap: 10px; align-items: center; width: 100%; justify-content: flex-end;">
+        <a href="https://billing.stripe.com/p/login/あなたのポータルリンク" target="_blank" class="billing-link">⚙️ 契約管理</a>
         <button onclick="logout()" style="background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0;">ログアウト</button>
       </div>
     </div>
@@ -117,7 +123,6 @@
     <div id="learningArea">
       <div id="chatBox"></div>
       
-      <!-- ★質問ボタン -->
       <button class="ask-btn" onclick="openQuestionModal()">🙋 先生に質問する（日本語OK）</button>
       
       <div style="font-size: 12px; color: #666; margin-bottom: 5px; text-align: right;">
@@ -139,11 +144,10 @@
     </div>
   </div>
   
-  <!-- ★質問モーダル -->
   <div id="questionModal">
     <div class="modal-content">
       <h3 style="margin-top: 0; color: #27ae60;">🙋 先生に質問する</h3>
-      <textarea id="questionInput" placeholder="中国語に関する質問を日本語で入力してください...&#10;例：「水族館」は中国語で何と言いますか？" style="height: 150px; width: 100%; margin-bottom: 10px; border-radius: 5px; resize: vertical;"></textarea>
+      <textarea id="questionInput" placeholder="中国語に関する質問を日本語で入力してください...&#10;例：「水族館」は中国語で何と言いますか？" style="height: 150px; margin-bottom: 10px; border-radius: 5px; resize: vertical;"></textarea>
       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <button onclick="closeQuestionModal()" style="background: #95a5a6; flex: 1; border-radius: 5px;">キャンセル</button>
         <button id="sendQuestionBtn" onclick="sendQuestion()" style="background: #27ae60; flex: 1; border-radius: 5px;">質問する</button>
@@ -159,6 +163,7 @@
     // ★★★ ここにそれぞれのGASのデプロイURLを貼り付けてください ★★★
     const GAS_LICENSE_URL = 'https://script.google.com/macros/s/AKfycby_h5wQX09teIr6CgZ3xnsbSDegoS-BbQPAIPvFwlH61P79hWQ5t8jN_OrxF5aPuZ1k_w/exec'; 
     const GAS_APP_URL = 'https://script.google.com/macros/s/AKfycbw7WkP6dLtEN-RpQS2YrIs9HiNG-8QgdmNgreLsS3WJXbwWaPWsC3kqj7BXy7mfNYTRjA/exec';         
+        
     
     let currentLicenseKey = localStorage.getItem('chineseAppLicenseKey') || '';
     let currentSheetData = []; 
@@ -167,12 +172,31 @@
     let displayHistory = []; 
     let isProcessing = false;
 
+    let speechRecognition = null;
+    let isRecording = false;
+    let originalText = '';
+
     window.onload = function() {
       if (currentLicenseKey) document.getElementById('licenseKeyInput').value = currentLicenseKey;
+      // ★保存された文字種設定があれば復元
+      const savedCharType = localStorage.getItem('chineseAppCharType');
+      if (savedCharType) document.getElementById('charTypeSelect').value = savedCharType;
     };
+
+    // ★文字種が変更された時の処理
+    function changeCharType() {
+      localStorage.setItem('chineseAppCharType', document.getElementById('charTypeSelect').value);
+      // 文字種が変わったら、現在のテーマで会話をリセットしてやり直す
+      if (currentSheetData.length > 0) {
+        startConversation();
+      }
+    }
 
     async function fetchFromLicenseGAS(payload) {
       payload.licenseKey = currentLicenseKey;
+      // ★通信時に現在の文字種設定を必ず送る
+      payload.charType = document.getElementById('charTypeSelect').value;
+      
       try {
         const response = await fetch(GAS_LICENSE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
         const data = await response.json();
@@ -278,16 +302,31 @@
       startConversation();
     }
 
-    function startConversation() {
+    // ★非同期処理（async）に変更し、最初の質問文を変換してから表示するようにしました
+    async function startConversation() {
       const themeSelect = document.getElementById('themeSelect');
       if (!themeSelect.value) return;
       currentIndex = parseInt(themeSelect.value, 10);
+      
       document.getElementById('learningArea').style.display = 'block';
       document.getElementById('historyArea').style.display = 'none';
       document.getElementById('userAnswer').value = '';
-      const firstQuestion = currentSheetData[currentIndex].chinese;
+      
+      let firstQuestion = currentSheetData[currentIndex].chinese;
+      
+      // 変換中のローディング表示
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML = '<div style="text-align:center; color:#666; margin-top:20px;">🔄 文字を変換中...</div>';
+      
+      // ★ライセンス管理GASに「最初の質問文を指定した文字種に変換して」と依頼
+      const data = await fetchFromLicenseGAS({ action: 'convertCharType', text: firstQuestion });
+      if (data && data.convertedText) {
+        firstQuestion = data.convertedText;
+      }
+      
       apiHistory = [{ role: 'assistant', content: firstQuestion }];
       displayHistory = [{ speaker: 'AI', text: firstQuestion }];
+      
       renderChat();
       speakChinese(firstQuestion);
     }
@@ -307,14 +346,12 @@
           wrapper.className = 'msg-ai-wrapper';
           speakerLabel.textContent = '🤖 AI先生';
           
-          // 翻訳ボタン
           const translateBtn = document.createElement('button');
           translateBtn.textContent = '❓ 翻訳';
           translateBtn.className = 'translate-btn';
           translateBtn.onclick = function(e) { e.stopPropagation(); toggleTranslation(msg.text, wrapper, translateBtn); };
           speakerLabel.appendChild(translateBtn);
           
-          // ★返答案ボタン
           const suggestBtn = document.createElement('button');
           suggestBtn.textContent = '💡 返答案';
           suggestBtn.className = 'translate-btn';
@@ -355,14 +392,11 @@
       }
     }
 
-    // ★返答案を取得して表示する処理
     async function toggleSuggestion(wrapper, btn) {
       let suggDiv = wrapper.querySelector('.suggestion-box');
       if (suggDiv) { suggDiv.style.display = suggDiv.style.display === 'none' ? 'block' : 'none'; return; }
       btn.textContent = '⏳ 考え中...'; btn.disabled = true;
-      
       const data = await fetchFromLicenseGAS({ action: 'suggestReply', history: apiHistory });
-      
       btn.textContent = '💡 返答案'; btn.disabled = false;
       if (data && data.suggestions) {
         try {
@@ -384,13 +418,11 @@
       }
     }
     
-    // 提案された例文を入力欄にセットする
     function useSuggestion(text) {
       document.getElementById('userAnswer').value = text;
       document.getElementById('userAnswer').focus();
     }
 
-    // ★質問モーダルの処理
     function openQuestionModal() {
       document.getElementById('questionModal').style.display = 'flex';
       document.getElementById('questionInput').value = '';
@@ -403,12 +435,9 @@
     async function sendQuestion() {
       const q = document.getElementById('questionInput').value.trim();
       if (!q) return alert('質問を入力してください。');
-      
       const btn = document.getElementById('sendQuestionBtn');
       btn.textContent = '回答を待っています...'; btn.disabled = true;
-      
       const data = await fetchFromLicenseGAS({ action: 'askQuestion', question: q });
-      
       btn.textContent = '質問する'; btn.disabled = false;
       if (data && data.answer) {
         document.getElementById('questionResultArea').style.display = 'block';
@@ -475,17 +504,17 @@
       navigator.clipboard.writeText(text).then(() => alert('📋 学習記録をクリップボードにコピーしました！')).catch(err => alert('コピーに失敗しました: ' + err));
     }
 
+    // ★音声読み上げの言語を文字種によって切り替える
     function speakChinese(text) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'zh-CN'; utterance.rate = 0.8;
+      const charType = document.getElementById('charTypeSelect').value;
+      utterance.lang = charType === 'trad' ? 'zh-TW' : 'zh-CN';
+      utterance.rate = 0.8;
       window.speechSynthesis.speak(utterance);
     }
-    // ★音声認識用のグローバル変数
-    let speechRecognition = null;
-    let isRecording = false;
-    let originalText = ''; // ★追加：録音開始前のテキストを保持する変数
-
+    
+    // ★音声認識の言語を文字種によって切り替える
     function startSpeechRecognition() {
       if (!('webkitSpeechRecognition' in window)) return alert('お使いのブラウザは音声入力に対応していません。');
       
@@ -498,7 +527,8 @@
       }
 
       speechRecognition = new webkitSpeechRecognition();
-      speechRecognition.lang = 'zh-CN'; 
+      const charType = document.getElementById('charTypeSelect').value;
+      speechRecognition.lang = charType === 'trad' ? 'zh-TW' : 'zh-CN';
       speechRecognition.continuous = true;
       speechRecognition.interimResults = true;
       
@@ -508,16 +538,12 @@
         micBtn.innerHTML = '⏹️';
         micBtn.style.borderRadius = '10px';
         answerArea.placeholder = '🔴 録音中... 話し終わったら停止ボタン（⏹️）を押してください';
-        
-        // ★修正：マイクを押す前に入力されていた文字を記憶しておく
         originalText = answerArea.value; 
       };
 
       speechRecognition.onresult = function(event) {
         let finalTranscript = '';
         let interimTranscript = '';
-        
-        // ★修正：常に 0 からループを回し、確定した言葉が消えないようにする
         for (let i = 0; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
@@ -525,8 +551,6 @@
             interimTranscript += event.results[i][0].transcript;
           }
         }
-        
-        // ★修正：元のテキスト ＋ 確定したテキスト ＋ 認識中のテキスト をすべて結合して表示
         answerArea.value = originalText + finalTranscript + interimTranscript;
       };
 
@@ -549,7 +573,6 @@
 
       speechRecognition.start();
     }
-    
   </script>
 </body>
 </html>
